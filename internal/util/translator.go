@@ -88,6 +88,30 @@ func RenameKey(jsonStr, oldKeyPath, newKeyPath string) (string, error) {
 	return string(finalJSON), nil
 }
 
+// CleanKnownEmptyToolArguments removes empty string values for known optional
+// tool argument fields that some OpenAI-compatible models emit unnecessarily.
+func CleanKnownEmptyToolArguments(raw string) string {
+	if raw == "" || !gjson.Valid(raw) {
+		return raw
+	}
+	root := gjson.Parse(raw)
+	if !root.IsObject() {
+		return raw
+	}
+
+	cleaned := []byte(raw)
+	for _, field := range []string{"pages", "limit", "offset", "timeout"} {
+		if value := gjson.GetBytes(cleaned, field); value.Exists() && value.Type == gjson.String && value.String() == "" {
+			var err error
+			cleaned, err = sjson.DeleteBytes(cleaned, field)
+			if err != nil {
+				return raw
+			}
+		}
+	}
+	return string(cleaned)
+}
+
 // FixJSON converts non-standard JSON that uses single quotes for strings into
 // RFC 8259-compliant JSON by converting those single-quoted strings to
 // double-quoted strings with proper escaping.

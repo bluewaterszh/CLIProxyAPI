@@ -1,8 +1,27 @@
 package util
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/tidwall/gjson"
 )
+
+func TestCleanKnownEmptyToolArguments(t *testing.T) {
+	raw := `{"pages":"","limit":"","offset":"","timeout":"","replacement":"","query":"","path":"file.txt","nested":{"pages":""}}`
+	got := CleanKnownEmptyToolArguments(raw)
+
+	for _, removed := range []string{"pages", "limit", "offset", "timeout"} {
+		if gjson.Get(got, removed).Exists() {
+			t.Fatalf("expected top-level %s to be removed from %s", removed, got)
+		}
+	}
+	for _, kept := range []string{`"replacement":""`, `"query":""`, `"path":"file.txt"`, `"nested":{"pages":""}`} {
+		if !strings.Contains(got, kept) {
+			t.Fatalf("expected %s to be kept in %s", kept, got)
+		}
+	}
+}
 
 func TestSanitizeFunctionName(t *testing.T) {
 	tests := []struct {

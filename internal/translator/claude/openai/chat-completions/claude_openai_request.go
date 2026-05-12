@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/registry"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/thinking"
+	"github.com/router-for-me/CLIProxyAPI/v7/internal/util"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -222,6 +223,7 @@ func ConvertOpenAIRequestToClaude(modelName string, inputRawJSON []byte, stream 
 							if args := function.Get("arguments"); args.Exists() {
 								argsStr := args.String()
 								if argsStr != "" && gjson.Valid(argsStr) {
+									argsStr = util.CleanKnownEmptyToolArguments(argsStr)
 									argsJSON := gjson.Parse(argsStr)
 									if argsJSON.IsObject() {
 										toolUse, _ = sjson.SetRawBytes(toolUse, "input", []byte(argsJSON.Raw))
